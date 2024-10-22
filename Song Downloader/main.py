@@ -2,7 +2,6 @@ import streamlit as st
 import requests as r
 import re
 import urllib.parse
-from pytubefix import YouTube as yt
 from io import BytesIO
 
 def song_data(name:str):
@@ -24,37 +23,22 @@ def get_dl(link):
     dl_items = [dl_lnk, song_id[0]]
     return dl_items
 
-def on_progress_callback(stream, chunk, bytes_remaining):
-    total_size = stream.filesize
-    bytes_downloaded = total_size - bytes_remaining
-    percentage_of_completion = int(bytes_downloaded / total_size * 100)
-    st.session_state.progress_bar.progress(percentage_of_completion)
 def download(url):
-    if 'youtube.com' in url:
-        yt_video = yt(url, on_progress_callback=on_progress_callback)
-        chc = yt_video.streams.filter(only_audio=True)[-1]
-        titl = yt_video.title
-        buffer = BytesIO()
-        st.session_state.progress_bar = st.progress(0)
-        chc.stream_to_buffer(buffer)
-        buffer.seek(0)
-        return buffer, titl
-    else:
-        try:
-            response = r.get(url, stream=True)
-            total_size = int(response.headers.get('content-length', 0))
-            content = b""
-            bytes_downloaded = 0
-            chunk_size = 1024
-            progress_bar = st.progress(0)
-            for data in response.iter_content(chunk_size=chunk_size):
-                content += data
-                bytes_downloaded += len(data)
-                progress = bytes_downloaded / total_size
-                progress_bar.progress(progress)
-            return content
-        except Exception as e:
-            st.error(f"Error: {e}")
+    try:
+        response = r.get(url, stream=True)
+        total_size = int(response.headers.get('content-length', 0))
+        content = b""
+        bytes_downloaded = 0
+        chunk_size = 1024
+        progress_bar = st.progress(0)
+        for data in response.iter_content(chunk_size=chunk_size):
+            content += data
+            bytes_downloaded += len(data)
+            progress = bytes_downloaded / total_size
+            progress_bar.progress(progress)
+        return content
+    except Exception as e:
+        st.error(f"Error: {e}")
 
 
 st.title(":red[Song Downloader]")
